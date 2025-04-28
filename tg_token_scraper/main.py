@@ -6,10 +6,16 @@ import re
 #  - UNAUTHENTICATED = 60 per hour per IP addr
 #  - AUTHENTICATED = 1500 per hour
 
-def main(query):
-    tg_tokens = {}
+def save_tokens_to_file(token_set,file_path):
+    with open(f"{file_path}", "a") as f:
+        for t in token_set:
+            f.write(f"{t}\n")
+    print("saved")
 
-    r = requests.get(f"https://github.com/search?q={query}&type=repositories&s=updated&o=desc")
+def main(query):
+    tg_tokens = set()
+
+    r = requests.get(f"https://github.com/search?q=bot+language%3APython&type=repositories&s=updated&o=desc&l=Python")
     soup = BeautifulSoup(r.content, "html.parser")
 
     # extracts the repo owners and names from the html content
@@ -49,13 +55,18 @@ def main(query):
 
 
         # if api rate limit exceeded
-        try:
+#        try:
+#            if "API rate limit exceeded for" in all_commits["message"]:
+#                pass
+#        except KeyError:
+#            print("Api limit reached. Please change IP.")
+#            print(all_commits)
+#            break
+        if "message" in all_commits:
             if "API rate limit exceeded for" in all_commits["message"]:
-                pass
-        except KeyError and TypeError:
-            print("Api limit reached. Please change IP.")
-            break
-
+                print("Api limit reached. Please change IP.")
+                print(all_commits)
+                break
 
         # first 3, last 3
         commits_to_search = all_commits[:3] + all_commits[len(all_commits)-3:]
@@ -74,8 +85,8 @@ def main(query):
             else:
                 print(f"No tokens found in {owner}/{repo}")
 
-
     return tg_tokens
 
 
-main("bot")
+tokens = main("bot")
+save_tokens_to_file(tokens, "output.txt")
