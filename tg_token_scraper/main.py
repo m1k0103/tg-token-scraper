@@ -30,8 +30,19 @@ def main(query):
     
     repo_links = []
     for i in repo_names:
-        owner,repo = i.split("/")
+        try:
+            owner,repo = i.split("/")
+        except ValueError:
+            print("Skipping repo with invalid title.")
+            continue
+
         json = requests.get(f"https://api.github.com/repos/{owner}/{repo}").json()
+        
+
+        if "status" in json:
+            if json["status"] == "404":
+                print("Repo stopped existing. Skipping..")
+                continue
         
         try:
             if "API rate limit" in json["message"]:
@@ -55,18 +66,15 @@ def main(query):
 
 
         # if api rate limit exceeded
-#        try:
-#            if "API rate limit exceeded for" in all_commits["message"]:
-#                pass
-#        except KeyError:
-#            print("Api limit reached. Please change IP.")
-#            print(all_commits)
-#            break
         if "message" in all_commits:
             if "API rate limit exceeded for" in all_commits["message"]:
                 print("Api limit reached. Please change IP.")
                 print(all_commits)
                 break
+
+        # sort all_commits json by most recent date to oldest date on a commit
+        all_commits.sort(key=lambda x:x["commit"]["author"]["date"])
+
 
         # first 3, last 3
         commits_to_search = all_commits[:3] + all_commits[len(all_commits)-3:]
