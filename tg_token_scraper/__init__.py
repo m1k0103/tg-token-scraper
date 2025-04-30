@@ -1,2 +1,1 @@
-def start():
-    pass
+from . import *
